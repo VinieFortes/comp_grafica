@@ -55,7 +55,7 @@ function init() {
 
     // Definição dos tipos de voxels
     defineVoxelTypes();
-    currentVoxelTypeIndex = 0; // Inicia com o primeiro tipo de voxel
+    currentVoxelTypeIndex = 0; // Inicia com o primeiro tipo (Tipo 3)
     updateCurrentVoxelIndicator();
 
     // Inicializar o teclado
@@ -74,17 +74,17 @@ function init() {
     window.addEventListener("keydown", handleKeyPress);
 }
 
-// Definição dos tipos de voxels com cores distintas
+// Definição dos tipos de voxels com cores específicas para árvores
 function defineVoxelTypes() {
     voxelTypes = [
-        { name: 'Tipo 1', color: 0x00ff00 }, // Verde
-        { name: 'Tipo 2', color: 0x0000ff }, // Azul
-        { name: 'Tipo 3', color: 0xff0000 }, // Vermelho
-        { name: 'Tipo 4', color: 0xffff00 }, // Amarelo
-        { name: 'Tipo 5', color: 0xff00ff }  // Magenta
+        { name: 'Tronco', color: 0x8B4513 },           // Tipo 3: Marrom
+        { name: 'Folhagem Escura', color: 0x006400 }, // Tipo 4: Verde Escuro
+        { name: 'Folhagem Clara', color: 0x00FF00 },  // Tipo 5: Verde Claro
+        { name: 'Frutos', color: 0xFF0000 },           // Tipo 6: Vermelho
+        { name: 'Flores', color: 0xFF69B4 }            // Tipo 7: Rosa
     ];
-    // Se houver uma função para definir materiais padrão, chame-a aqui
-    // setDefaultMaterial(voxelTypes.map(v => v.color));
+    currentVoxelTypeIndex = 0; // Inicia com o primeiro tipo (Tipo 3)
+    updateCurrentVoxelIndicator();
 }
 
 // Função para inicializar iluminação básica
@@ -115,6 +115,7 @@ function onWindowResize() {
     }
 }
 
+// Manipulação de eventos de teclado
 function handleKeyPress(event) {
     const moveDistance = voxelSize;
 
@@ -198,16 +199,16 @@ function addVoxel() {
     voxel.position.copy(currentVoxel.position);
     scene.add(voxel);
 
-    // Armazenar voxel na estrutura
-    voxels[posKey] = voxel;
+    // Armazenar voxel na estrutura com tipo atualizado
+    voxels[posKey] = { voxel: voxel, type: currentVoxelTypeIndex + 3 };
 }
 
 // Função para remover um voxel no local atual
 function removeVoxel() {
     const posKey = `${currentVoxel.position.x},${currentVoxel.position.y},${currentVoxel.position.z}`;
-    const voxel = voxels[posKey];
-    if (voxel) {
-        scene.remove(voxel);
+    const voxelData = voxels[posKey];
+    if (voxelData) {
+        scene.remove(voxelData.voxel);
         delete voxels[posKey];
     }
 }
@@ -241,8 +242,8 @@ function saveModel() {
     }
 
     const voxelData = Object.keys(voxels).map(key => {
+        const { voxel, type } = voxels[key];
         const [x, y, z] = key.split(',').map(Number);
-        const type = voxelTypes.findIndex(v => v.color === voxels[key].material.color.getHex());
         return { x, y, z, type };
     });
 
@@ -275,7 +276,7 @@ function loadModel() {
 
             // Remover todos os voxels atuais
             for (const key in voxels) {
-                scene.remove(voxels[key]);
+                scene.remove(voxels[key].voxel);
             }
             for (const key in voxels) {
                 delete voxels[key];
@@ -287,13 +288,19 @@ function loadModel() {
                 if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number' || typeof type !== 'number') {
                     throw new Error("Formato inválido: cada voxel deve ter x, y, z e type como números.");
                 }
-                const color = voxelTypes[type] ? voxelTypes[type].color : 0xffffff;
+
+                const voxelTypeIndex = type - 3; // Ajustar para o índice do array voxelTypes
+                if (voxelTypeIndex < 0 || voxelTypeIndex >= voxelTypes.length) {
+                    throw new Error(`Tipo de voxel inválido: ${type}`);
+                }
+
+                const color = voxelTypes[voxelTypeIndex].color;
                 const material = new THREE.MeshBasicMaterial({ color });
                 const voxel = new THREE.Mesh(new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize), material);
                 voxel.position.set(x, y, z);
                 scene.add(voxel);
                 const posKey = `${x},${y},${z}`;
-                voxels[posKey] = voxel;
+                voxels[posKey] = { voxel: voxel, type: type };
             });
 
             alert("Modelo carregado com sucesso!");
