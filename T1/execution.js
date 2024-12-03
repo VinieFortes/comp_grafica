@@ -46,6 +46,8 @@ function init() {
     // Cena
     scene = new THREE.Scene();
     clock = new THREE.Clock();
+    console.log(scene.background);
+    scene.background = new THREE.Color(0x87CEEB);
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -54,7 +56,7 @@ function init() {
     document.getElementById('webgl-output').appendChild(renderer.domElement);
 
     // Iluminação
-    initDefaultBasicLight(scene);
+    initDefaultBasicLight2(scene);
 
     // Câmeras
     initCameras();
@@ -81,12 +83,37 @@ function init() {
 
 // Função para inicializar as câmeras e seus controles
 function initCameras() {
-    // Câmera de Inspeção (Orbit)
-    orbitCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    orbitCamera.position.set(planeSize / 2, planeSize * 1.5, planeSize * 1.5);
-    orbitCamera.lookAt(planeSize / 2, 0, planeSize / 2);
+    const mapSize = planeSize; // Tamanho do mapa
+
+    // Câmera de Inspeção (Orbit) posicionada centralmente acima do mapa
+    orbitCamera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+
+     // Posicionar a câmera diretamente acima do centro do mapa
+     const xPos = 0; // Centro do mapa no eixo x
+     const zPos = 0; // Centro do mapa no eixo z
+     const yPos = mapSize * 1.5; // Altura da câmera acima do mapa
+
+    orbitCamera.position.set(xPos, yPos, zPos);
+
+    // A câmera olha diretamente para o centro do mapa
+    orbitCamera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
     orbitControls = new OrbitControls(orbitCamera, renderer.domElement);
-    orbitControls.target.set(planeSize / 2, 0, planeSize / 2);
+
+    // Configurar o alvo (ponto central do mapa)
+    orbitControls.target.set(0, 0, 0);
+
+    // Restringir o zoom e a rotação para evitar que a câmera vá abaixo do mapa
+    orbitControls.minDistance = 10;
+    orbitControls.maxDistance = yPos + 10;
+    orbitControls.maxPolarAngle = Math.PI / 2; // Limitar para que não passe do plano horizontal
+
     orbitControls.update();
 
     // Câmera de Primeira Pessoa (First-Person)
@@ -115,6 +142,19 @@ function initDefaultBasicLight(scene) {
     const ambientLight = new THREE.AmbientLight(0x404040);
     scene.add(ambientLight);
 }
+
+// Função para inicializar iluminação sem escuridão
+function initDefaultBasicLight2(scene) {
+    // Luz hemisférica para iluminação uniforme
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+    hemisphereLight.position.set(0, 1, 0); // Posição no topo
+    scene.add(hemisphereLight);
+
+    // Luz ambiente mais intensa
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+}
+
 
 // Função para carregar o mapa de voxels (Terreno)
 function loadVoxelMap(url) {
@@ -285,6 +325,7 @@ function handleKeyPress(event) {
 // Função de animação
 function animate() {
     requestAnimationFrame(animate);
+    const fixedHeight = 2;
 
     const delta = clock.getDelta(); // Tempo decorrido desde a última chamada
 
@@ -292,6 +333,7 @@ function animate() {
         orbitControls.update();
     } else if (currentCamera === firstPersonCamera) {
         firstPersonControls.update(delta);
+        firstPersonCamera.position.y = fixedHeight;
     }
 
     renderer.render(scene, currentCamera);
