@@ -97,8 +97,6 @@ function defineVoxelTypes() {
   updateCurrentVoxelIndicator();
 }
 
-
-
 // Criação da interface GUI para salvar e carregar modelos
 function createGUI() {
   // Já temos os botões no HTML; apenas garantimos que as funções estejam disponíveis globalmente

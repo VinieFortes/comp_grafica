@@ -1,20 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
-import { FirstPersonControls } from '../build/jsm/controls/FirstPersonControls.js';
 import {
     initDefaultBasicLight,
     setDefaultMaterial} from "../libs/util/util.js";
+import {PointerLockControls} from "../build/jsm/controls/PointerLockControls.js";
 
 // Mapeamento de altura para cada type
 const typeHeightMap = {
     0: 3, // Tipo 0: 3 blocos de altura (Terreno)
     1: 2, // Tipo 1: 2 blocos de altura (Terreno)
     2: 1, // Tipo 2: 1 bloco de altura (Terreno)
-    3: 5, // Tipo 3: 5 blocos de altura (Tronco)
-    4: 3, // Tipo 4: 3 blocos de altura (Folhagem Escura)
-    5: 3, // Tipo 5: 3 blocos de altura (Folhagem Clara)
-    6: 2, // Tipo 6: 2 blocos de altura (Frutos)
-    7: 2  // Tipo 7: 2 blocos de altura (Flores)
+    3: 5, // Tipo 3: (Tronco)
+    4: 3, // Tipo 4: (Folhagem Escura)
+    5: 3, // Tipo 5: (Folhagem Clara)
+    6: 2, // Tipo 6: (Frutos)
+    7: 2  // Tipo 7: (Flores)
 };
 
 // Mapeamento de cores para cada type
@@ -35,13 +35,13 @@ let orbitCamera, firstPersonCamera;
 let orbitControls, firstPersonControls;
 let currentCamera;
 let previousCameraPosition = {};
-const planeSize = 35; // Considerando o mapa de 35 linhas
+const planeSize = 35;
 const voxelSize = 1.0;
 const voxels = {}; // Estrutura para armazenar voxels
 let isOrbit = true;
 let clock = new THREE.Clock();
 
-// Lista de URLs dos arquivos de árvores
+// Lista de arquivos de árvores
 const treeFiles = ['tree1.json', 'tree2.json', 'tree3.json'];
 
 // Função para inicializar a cena
@@ -49,7 +49,6 @@ function init() {
     // Cena
     scene = new THREE.Scene();
     clock = new THREE.Clock();
-    console.log(scene.background);
     scene.background = new THREE.Color(0x87CEEB);
 
     // Renderer
@@ -84,6 +83,8 @@ function init() {
     animate();
 }
 
+let pointerLockControls;
+
 // Função para inicializar as câmeras e seus controles
 function initCameras() {
     const mapSize = planeSize; // Tamanho do mapa
@@ -97,15 +98,14 @@ function initCameras() {
     );
 
      // Posicionar a câmera diretamente acima do centro do mapa
-     const xPos = 0; // Centro do mapa no eixo x
-     const zPos = 0; // Centro do mapa no eixo z
+     const xPos = 0;
+     const zPos = 0;
      const yPos = mapSize * 1.5; // Altura da câmera acima do mapa
 
     orbitCamera.position.set(xPos, yPos, zPos);
 
     // A câmera olha diretamente para o centro do mapa
-    orbitCamera.lookAt(new THREE.Vector3(0, 0, 0));
-
+    orbitCamera.lookAt(0, 0, 0);
 
     orbitControls = new OrbitControls(orbitCamera, renderer.domElement);
 
@@ -119,26 +119,26 @@ function initCameras() {
 
     orbitControls.update();
 
-    // Câmera de Primeira Pessoa (First-Person)
-    firstPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    firstPersonCamera.position.set(2, 2, 2); // Posição inicial mais adequada
+    // Câmera de primeira pessoa usando PointerLockControls
+    firstPersonCamera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+    firstPersonCamera.position.set(2, 2, 2);
 
-    // Configurações dos controles de primeira pessoa
-    firstPersonControls = new FirstPersonControls(firstPersonCamera, renderer.domElement);
-    firstPersonControls.lookSpeed = 0.025;      // Reduzir velocidade de rotação para mais suavidade
-    firstPersonControls.movementSpeed = 1;     // Reduzir velocidade de movimento para mais suavidade
-    firstPersonControls.lookVertical = true;
-    firstPersonControls.constrainVertical = true;
-    firstPersonControls.verticalMin = 1.0;
-    firstPersonControls.verticalMax = 2.0;
+    pointerLockControls = new PointerLockControls(firstPersonCamera, document.body);
 
-    // Definir câmera inicial
+    // Evento para ativar o pointer lock ao clicar na tela
+    document.addEventListener('click', () => {
+        if (currentCamera === firstPersonCamera) {
+            pointerLockControls.lock();
+        }
+    });
+
     currentCamera = orbitCamera;
 }
-
-
-
-
 
 // Função para carregar o mapa de voxels (Terreno)
 function loadVoxelMap(url) {
@@ -222,7 +222,6 @@ function addTree(treeData, baseX, baseZ) {
     // Adiciona cada voxel da árvore, ajustando a posição Y com base na altura do terreno
     treeData.forEach(voxelData => {
         const { x, y, z, type } = voxelData;
-        console.log('Adicionando voxel da árvore:', x, y, z, type);
         // A posição da árvore é relativa, então adicionamos baseX, terrainHeight + y, baseZ
         addVoxel(baseX + x, y, baseZ + z, type);
     });
@@ -260,23 +259,20 @@ function addVoxel(x, y, z, type) {
 // Função para alternar entre as câmeras
 function toggleCamera() {
     if (isOrbit) {
-        // Salvar posição atual da câmera de inspeção
+        // Salva posição do orbit
         previousCameraPosition.orbit = orbitCamera.position.clone();
         previousCameraPosition.orbitTarget = orbitControls.target.clone();
 
-        // Ativar controles de primeira pessoa
-        firstPersonControls.enabled = true;
         orbitControls.enabled = false;
+        pointerLockControls.getObject().position.copy(previousCameraPosition.firstPerson || new THREE.Vector3(2, 2, 2));
         currentCamera = firstPersonCamera;
     } else {
-        // Salvar posição atual da câmera de primeira pessoa
-        previousCameraPosition.firstPerson = firstPersonCamera.position.clone();
+        // Salva posição da primeira pessoa
+        previousCameraPosition.firstPerson = pointerLockControls.getObject().position.clone();
 
-        // Ativar controles de inspeção
-        orbitCamera.position.copy(previousCameraPosition.orbit || orbitCamera.position);
-        orbitControls.target.copy(previousCameraPosition.orbitTarget || orbitControls.target);
+        orbitCamera.position.copy(previousCameraPosition.orbit || new THREE.Vector3(0, planeSize*1.5, 0));
+        orbitControls.target.copy(previousCameraPosition.orbitTarget || new THREE.Vector3(0, 0, 0));
         orbitControls.enabled = true;
-        firstPersonControls.enabled = false;
         currentCamera = orbitCamera;
     }
     isOrbit = !isOrbit;
@@ -305,44 +301,51 @@ function handleKeyPress(event) {
         toggleCamera();
     }
 }
-window.addEventListener('keydown', (event) => movementControls(event.keyCode, true));
-window.addEventListener('keyup', (event) => movementControls(event.keyCode, false));
 
-function movementControls(key, value) {
-    switch (key) {
-        case 87: // W
-            moveForward = value;
-            break;
-        case 83: // S
-            moveBackward = value;
-            break;
-        case 65: // A
-            moveLeft = value;
-            break;
-        case 68: // D
-            moveRight = value;
-            break;
-        case 32:
-            moveUp = value;
-            break;
-        case 16:
-            moveDown = value;
-            break;
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+
+document.addEventListener('keydown', (event) => {
+    switch (event.code) {
+        case 'KeyW': moveForward = true; break;
+        case 'KeyS': moveBackward = true; break;
+        case 'KeyA': moveLeft = true; break;
+        case 'KeyD': moveRight = true; break;
     }
-}
+});
+
+document.addEventListener('keyup', (event) => {
+    switch (event.code) {
+        case 'KeyW': moveForward = false; break;
+        case 'KeyS': moveBackward = false; break;
+        case 'KeyA': moveLeft = false; break;
+        case 'KeyD': moveRight = false; break;
+    }
+});
 
 // Função de animação
 function animate() {
     requestAnimationFrame(animate);
-    const fixedHeight = 2;
 
     const delta = clock.getDelta(); // Tempo decorrido desde a última chamada
 
     if (currentCamera === orbitCamera) {
         orbitControls.update();
     } else if (currentCamera === firstPersonCamera) {
-        firstPersonControls.update(delta);
-        firstPersonCamera.position.y = fixedHeight;
+        const speed = 5.0 * delta;
+        const object = pointerLockControls.getObject();
+
+        // Direção frontal
+        if (moveForward) object.translateZ(-speed);
+        if (moveBackward) object.translateZ(speed);
+
+        // Direção lateral
+        if (moveLeft) object.translateX(-speed);
+        if (moveRight) object.translateX(speed);
+
+        object.position.y = 2; // Altura fixa
     }
 
     renderer.render(scene, currentCamera);

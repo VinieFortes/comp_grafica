@@ -12,9 +12,9 @@ let orbitCamera, firstPersonCamera;
 let orbitControls, firstPersonControls;
 let currentCamera;
 let previousCameraPosition = {};
-const planeSize = 35; // Tamanho total do grid (35x35)
+const planeSize = 35;
 const voxelSize = 1.0;
-const voxels = {}; // Estrutura para armazenar voxels com chave como 'x,y,z'
+const voxels = {};
 let isOrbit = true;
 let clock = new THREE.Clock();
 let keyboard;
@@ -85,22 +85,9 @@ function initCameras() {
     orbitControls.target.set(0, 0, 0);
     orbitControls.update();
 
-    // Câmera de Primeira Pessoa (First-Person)
-    firstPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    firstPersonCamera.position.set(0, 1, 5); // Posição inicial mais adequada
-    firstPersonControls = new FirstPersonControls(firstPersonCamera, renderer.domElement);
-    firstPersonControls.lookSpeed = 0.2;      // Velocidade de rotação mais suave
-    firstPersonControls.movementSpeed = 5;    // Velocidade de movimento mais rápida
-    firstPersonControls.lookVertical = true;
-    firstPersonControls.constrainVertical = true;
-    firstPersonControls.verticalMin = 1.0;
-    firstPersonControls.verticalMax = 2.0;
-
     // Definir câmera inicial
     currentCamera = orbitCamera;
 }
-
-
 
 // Definição dos tipos de voxels com cores distintas
 function defineVoxelTypes() {
