@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import KeyboardState from "../libs/util/KeyboardState.js";
+import { setDefaultMaterial } from "../libs/util/util.js";
 
 // Variáveis globais
 let scene, camera, renderer, orbitControls, firstPersonControls;
@@ -200,7 +201,7 @@ function addVoxel() {
   }
 
   const voxelType = voxelTypes[currentVoxelTypeIndex];
-  const material = new THREE.MeshBasicMaterial({ color: voxelType.color });
+  const material = setDefaultMaterial(voxelType.color);
   const voxel = new THREE.Mesh(
     new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize),
     material

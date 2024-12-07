@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import { FirstPersonControls } from '../build/jsm/controls/FirstPersonControls.js';
+import {
+    initDefaultBasicLight,
+    setDefaultMaterial} from "../libs/util/util.js";
 
 // Mapeamento de altura para cada type
 const typeHeightMap = {
@@ -56,7 +59,7 @@ function init() {
     document.getElementById('webgl-output').appendChild(renderer.domElement);
 
     // Iluminação
-    initDefaultBasicLight2(scene);
+    initDefaultBasicLight(scene);
 
     // Câmeras
     initCameras();
@@ -122,8 +125,8 @@ function initCameras() {
 
     // Configurações dos controles de primeira pessoa
     firstPersonControls = new FirstPersonControls(firstPersonCamera, renderer.domElement);
-    firstPersonControls.lookSpeed = 0.05;      // Reduzir velocidade de rotação para mais suavidade
-    firstPersonControls.movementSpeed = 2;     // Reduzir velocidade de movimento para mais suavidade
+    firstPersonControls.lookSpeed = 0.025;      // Reduzir velocidade de rotação para mais suavidade
+    firstPersonControls.movementSpeed = 1;     // Reduzir velocidade de movimento para mais suavidade
     firstPersonControls.lookVertical = true;
     firstPersonControls.constrainVertical = true;
     firstPersonControls.verticalMin = 1.0;
@@ -133,27 +136,8 @@ function initCameras() {
     currentCamera = orbitCamera;
 }
 
-// Função para inicializar iluminação básica
-function initDefaultBasicLight(scene) {
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(planeSize / 2, planeSize * 2, planeSize * 2);
-    scene.add(directionalLight);
 
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    scene.add(ambientLight);
-}
 
-// Função para inicializar iluminação sem escuridão
-function initDefaultBasicLight2(scene) {
-    // Luz hemisférica para iluminação uniforme
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
-    hemisphereLight.position.set(0, 1, 0); // Posição no topo
-    scene.add(hemisphereLight);
-
-    // Luz ambiente mais intensa
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambientLight);
-}
 
 
 // Função para carregar o mapa de voxels (Terreno)
@@ -260,7 +244,7 @@ function getTerrainHeight(x, z) {
 // Função para adicionar um voxel na cena
 function addVoxel(x, y, z, type) {
     const color = colorMap[type] !== undefined ? colorMap[type] : 0xffffff;
-    const material = new THREE.MeshLambertMaterial({ color });
+    const material = setDefaultMaterial(color);
     const voxel = new THREE.Mesh(new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize), material);
 
     // Ajuste da posição Y: quando y=0, posiciona exatamente no grid
@@ -319,6 +303,31 @@ function onWindowResize() {
 function handleKeyPress(event) {
     if (event.key === 'c' || event.key === 'C') {
         toggleCamera();
+    }
+}
+window.addEventListener('keydown', (event) => movementControls(event.keyCode, true));
+window.addEventListener('keyup', (event) => movementControls(event.keyCode, false));
+
+function movementControls(key, value) {
+    switch (key) {
+        case 87: // W
+            moveForward = value;
+            break;
+        case 83: // S
+            moveBackward = value;
+            break;
+        case 65: // A
+            moveLeft = value;
+            break;
+        case 68: // D
+            moveRight = value;
+            break;
+        case 32:
+            moveUp = value;
+            break;
+        case 16:
+            moveDown = value;
+            break;
     }
 }
 
