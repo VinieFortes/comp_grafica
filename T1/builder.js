@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import KeyboardState from "../libs/util/KeyboardState.js";
-import { setDefaultMaterial } from "../libs/util/util.js";
+import {
+  initDefaultBasicLight,
+  setDefaultMaterial} from "../libs/util/util.js";
 
 // Variáveis globais
 let scene, camera, renderer, orbitControls, firstPersonControls;
@@ -95,15 +97,7 @@ function defineVoxelTypes() {
   updateCurrentVoxelIndicator();
 }
 
-// Função para inicializar iluminação básica
-function initDefaultBasicLight(scene) {
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(planeSize / 2, planeSize * 2, planeSize * 2); // Ajuste da posição da luz para coincidir com a nova posição da câmera
-  scene.add(light);
 
-  const ambientLight = new THREE.AmbientLight(0x404040); // Luz ambiente suave
-  scene.add(ambientLight);
-}
 
 // Criação da interface GUI para salvar e carregar modelos
 function createGUI() {

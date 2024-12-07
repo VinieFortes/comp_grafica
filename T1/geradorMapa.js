@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import { FirstPersonControls } from '../build/jsm/controls/FirstPersonControls.js';
 import KeyboardState from '../libs/util/KeyboardState.js';
+import {
+    initDefaultBasicLight,
+    setDefaultMaterial} from "../libs/util/util.js";
 
 // Variáveis globais
 let scene, renderer;
@@ -97,15 +100,7 @@ function initCameras() {
     currentCamera = orbitCamera;
 }
 
-// Função para inicializar iluminação básica
-function initDefaultBasicLight(scene) {
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(10, 20, 10);
-    scene.add(directionalLight);
 
-    const ambientLight = new THREE.AmbientLight(0x404040); // Luz ambiente suave
-    scene.add(ambientLight);
-}
 
 // Definição dos tipos de voxels com cores distintas
 function defineVoxelTypes() {
@@ -251,7 +246,7 @@ function addVoxel() {
     }
 
     const voxelType = voxelTypes[currentVoxelTypeIndex];
-    const material = new THREE.MeshBasicMaterial({ color: voxelType.color });
+    const material = setDefaultMaterial(voxelType.color);
     const voxel = new THREE.Mesh(
         new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize),
         material
